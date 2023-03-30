@@ -1,38 +1,37 @@
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from django.forms import ValidationError, model_to_dict
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from .models import Team
 from .utils import data_processing
 from .exceptions import ImpossibleTitlesError, InvalidYearCupError, NegativeTitlesError
-from .models import Team
 
 
-@api_view(["GET"])
-def list_teams(request):
-    try:
-        data = {
-            "titles": request.query_params.get("titles", 0),
-            "first_cup": request.query_params.get("first_cup", ""),
-        }
-        data_processing(data)
+class TeamListCreateView(APIView):
+    def get(self, _):
         teams = Team.objects.all()
-        serializer = TeamSerializer(teams, many=True)
-        return Response(serializer.data)
-    except TeamException as err:
-        return Response({"error": str(err)}, status=400)
+        teams_dict = []
 
+        for team in teams:
+            dict_team = model_to_dict(team)
+            teams_dict.append(dict_team)
+        return Response(teams_dict)
 
-@api_view(["POST"])
-def create_team(request):
-    try:
-        data = data_processing(request.data)
+    def post(self, request):
+        team_data = request.data
+
+        try:
+            validated_data = data_processing(team_data)
+        except (NegativeTitlesError, InvalidYearCupError, ImpossibleTitlesError) as e:
+            return Response({'error': e.message}, 400)
+
         team = Team.objects.create(
-            name=data["name"],
-            titles=data["titles"],
-            top_scorer=data["top_scorer"],
-            fifa_code=data["fifa_code"],
-            first_cup=data["first_cup"],
+            name=validated_data["name"],
+            titles=validated_data["titles"],
+            top_scorer=validated_data["top_scorer"],
+            fifa_code=validated_data["fifa_code"],
+            first_cup=validated_data["first_cup"],
         )
-        serializer = TeamSerializer(team)
-        return Response(serializer.data, status=201)
-    except TeamException as err:
-        return Response({"error": str(err)}, status=400)
+
+        response_data = model_to_dict(team)
+
+        return Response(response_data, 201)
