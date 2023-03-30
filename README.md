@@ -81,6 +81,7 @@ pytest --testdox -vvs tests/tarefas/tarefa_3/
 Você também pode rodar cada método de teste isoladamente:
 
 ```shell
+
 pytest --testdox -vvs caminho/para/o/arquivo/de/teste::NomeDaClasse::nome_do_metodo_de_teste
 ```
 
