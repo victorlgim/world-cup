@@ -1,5 +1,9 @@
 from datetime import datetime
-from teams.exceptions import ImpossibleTitlesError, InvalidYearCupError, NegativeTitlesError
+from teams.exceptions import (
+    ImpossibleTitlesError,
+    InvalidYearCupError,
+    NegativeTitlesError,
+)
 
 
 def data_processing(data):

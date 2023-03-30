@@ -14,24 +14,50 @@ class TeamListCreateView(APIView):
         for team in teams:
             dict_team = model_to_dict(team)
             teams_dict.append(dict_team)
-        return Response(teams_dict)
+        return Response(teams_dict, status=200)
 
     def post(self, request):
         team_data = request.data
 
         try:
-            validated_data = data_processing(team_data)
-        except (NegativeTitlesError, InvalidYearCupError, ImpossibleTitlesError) as e:
-            return Response({'error': e.message}, 400)
+            data_processing(team_data)
+        except (NegativeTitlesError, InvalidYearCupError, ImpossibleTitlesError) as err:
+            return Response({"error": err.message}, status=400)
 
-        team = Team.objects.create(
-            name=validated_data["name"],
-            titles=validated_data["titles"],
-            top_scorer=validated_data["top_scorer"],
-            fifa_code=validated_data["fifa_code"],
-            first_cup=validated_data["first_cup"],
-        )
+        team = Team.objects.create(**request.data)
 
         response_data = model_to_dict(team)
 
-        return Response(response_data, 201)
+        return Response(response_data, status=201)
+
+
+class TeamIdentifierView(APIView):
+    def get(self, _, id):
+        try:
+            team = Team.objects.get(id=id)
+
+            return Response(model_to_dict(team), status=200)
+        
+        except Team.DoesNotExist:
+            return Response({"message": "Team not found"}, status=404)
+
+    def delete(self, _, id):
+        try:
+            team = Team.objects.get(id=id)
+            team.delete()
+
+            return Response(status=204)
+        
+        except Team.DoesNotExist:
+            return Response({"message": "Team not found"}, status=404)
+
+    def patch(self, request, id):
+        try:
+            team = Team.objects.get(id=id)
+            team.__dict__.update(request.data)
+            team.save()
+
+            return Response(model_to_dict(team), status=200)
+        
+        except Team.DoesNotExist:
+            return Response({"message": "Team not found"}, status=404)
