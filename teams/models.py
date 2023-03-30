@@ -1,7 +1,5 @@
 from django.db import models
 
-from datetime import datetime
-
 
 class Team(models.Model):
     name = models.CharField(max_length=30)
